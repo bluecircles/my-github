@@ -1,0 +1,123 @@
+# Practical Machine Learning
+# Course Assignment - Week 4 
+
+### Load Libraries that will be used later on
+```{r code1, include = TRUE}
+library(caret)
+library(ggplot2)
+library(corrplot)
+```
+
+1. Load the data from the CSV
+Assuming that the data files are saved in the current/ working directory
+```{r code2, include = TRUE}
+train_original <- read.csv("pml-training.csv")
+test_original <- read.csv("pml-testing.csv")
+```
+
+Split the train dataset into 2 so that the training model can be tested
+```{r code3, include = TRUE}
+inTrain  <- createDataPartition(train_original$classe, p=0.7, list=FALSE)
+to_train <- train_original[inTrain, ]
+to_test <- train_original[-inTrain,]
+```
+
+
+Perform some diagnostics
+```{r code4, include = TRUE}
+dim(to_train)
+dim(to_test)
+```
+
+2. Clean the data 
+Near zero variance variables will be removed as well 
+```{r code5, include = TRUE}
+ZeroVariance <- nearZeroVar(to_train)
+to_train <- to_train[,-ZeroVariance]
+to_test <- to_test[,-ZeroVariance]
+```
+
+
+Find variables that have all lot of NAs 
+```{r code6, include = TRUE}
+Var_Names <- names(to_train[,colSums(is.na(to_train)) == 0])
+to_train <- to_train[,Var_Names]
+to_test <- to_test[,Var_Names]
+```
+
+Remove the first 5 variables because they relate to the
+person performing the test (username/ time_stamp etc).
+There is no prediction power in those variables
+```{r code7, include = TRUE}
+to_train <- to_train[, -(1:5)]
+to_test <- to_test[, -(1:5)]
+```
+
+Check the dimension of the final tables
+```{r code8, include = TRUE}
+dim(to_train)
+dim(to_test)
+```
+
+The resulting dataset has 54 variables
+
+3. Correlation Analysis
+Calculate the correlation of each variable and plot it
+Correlatrions are calciated on numeric data only
+```{r code9, include = TRUE}
+to_train_numeric <- to_train[, sapply(to_train, is.numeric)]
+correlations <- cor(to_train_numeric, use="pairwise", method="spearman")
+round(correlations, 2)
+
+corrplot(correlations, type = "lower", order = "hclust", method = "circle",
+         tl.col = "black", tl.srt = 60, tl.cex = 0.2)
+```
+4. Prediction Model Builsing
+For this analysis to_train and to_test modles will be used in order to create
+a Prediction Model
+
+# GMB
+```{r code10, include = TRUE}
+set.seed(444)
+
+modFitGBM <- train(classe ~ ., data=to_train, method="gbm", verbose = FALSE,
+   trControl = trainControl(method = "repeatedcv", number = 5, repeats = 1))
+
+modFitGBM$finalModel
+predictGBM <- predict(modFitGBM, to_test)
+matrixGBM <- confusionMatrix(predictGBM, to_test$classe)
+matrixGBM
+```
+## Decision Tree
+```{r code11, include = TRUE}
+set.seed(444)
+
+modFitDT <- train(classe ~ ., data=to_train, method="rpart")
+
+plot(modFitDT$finalModel, uniform = TRUE,
+      main = "Decision Tree - Visual")
+text(modFitDT$finalModel, use.n = TRUE, cex=.5)
+
+predictDT <- predict(modFitDT, to_test)
+matrixDT <- confusionMatrix(predictDT, to_test$classe)
+matrixDT
+```
+## Random Forest
+```{r code12, include = TRUE ,eval = F}
+set.seed(444)
+
+modFitRF <- train(classe ~., data = to_train, method="rf", ntree = 1000)
+predictRF <- predict(modFitRF, to_test)
+matrixRF <- confusionMatrix(predictRF,to_test$classe)
+matrixRF
+```
+
+It seems that the accuracy of the random forest is better
+I'll use this model to test of the test_original data set
+
+```{r code13, include = TRUE, eval= F}
+final_prediction <- predict(modFitRF,test_original)
+final_prediction
+```
+
+
