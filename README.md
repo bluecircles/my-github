@@ -1,2 +1,2 @@
-# my-github
-Overview of all my files
+# Blue Circles
+My personal repo of files/ projects I'm working on
