@@ -1,0 +1,10 @@
+name: myfirstapp
+title:
+username:
+account: bluecircles
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 237499
+bundleId: 1084514
+url: https://bluecircles.shinyapps.io/myfirstapp/
+when: 1511119984.85885
